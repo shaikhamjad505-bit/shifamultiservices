@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payments - Shifa Multi Services</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header"><h3>📊 Menu</h3></div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+                <a href="customers.html" class="nav-item">👥 Customers</a>
+                <a href="billing.html" class="nav-item">📄 Bills</a>
+                <a href="payments.html" class="nav-item active">💳 Payments</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger btn-full" onclick="logout()">🚪 Logout</button>
+            </div>
+        </aside>
+
+        <main class="dashboard-content">
+            <header class="dashboard-header">
+                <h1>💳 Payments</h1>
+                <button class="btn btn-secondary" onclick="toggleModal('recordPaymentModal')">➕ Record</button>
+            </header>
+
+            <div id="recordPaymentModal" class="modal" style="display:none;">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>➕ Record Payment</h2>
+                    <form id="paymentForm" class="auth-form">
+                        <div class="form-group">
+                            <label>Bill *</label>
+                            <select id="billId" required></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Amount (₹) *</label>
+                            <input type="number" id="paymentAmount" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Method</label>
+                            <select id="paymentMethod">
+                                <option>Cash</option>
+                                <option>Card</option>
+                                <option>Online</option>
+                                <option>Cheque</option>
+                                <option>Bank Transfer</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Transaction ID</label>
+                            <input type="text" id="transactionId">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">✅ Record</button>
+                    </form>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Bill #</th>
+                        <th>Customer</th>
+                        <th>Bill Amount</th>
+                        <th>Paid Amount</th>
+                        <th>Method</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsTable">
+                    <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <script src="../js/database.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        checkAuth();
+        const owner = Auth.getCurrentOwner();
+
+        function loadPayments() {
+            const payments = db.getPayments(owner.id);
+            const tbody = document.getElementById('paymentsTable');
+            tbody.innerHTML = '';
+            if (!payments.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No payments</td></tr>';
+                return;
+            }
+            payments.forEach(p => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${p.billNumber}</strong></td>
+                        <td>${p.customerName}</td>
+                        <td>${formatCurrency(p.billAmount)}</td>
+                        <td>${formatCurrency(p.amount)}</td>
+                        <td>${p.paymentMethod}</td>
+                        <td>${formatDate(p.createdAt)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function loadPendingBills() {
+            const bills = db.getBills(owner.id, 'pending');
+            const select = document.getElementById('billId');
+            select.innerHTML = '<option value="">-- Select --</option>';
+            bills.forEach(b => {
+                select.innerHTML += `<option value="${b.id}">${b.billNumber} - ${b.customerName} (${formatCurrency(b.amount)})</option>`;
+            });
+        }
+
+        document.getElementById('paymentForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const billId = parseInt(document.getElementById('billId').value);
+            const result = db.recordPayment(billId, owner.id, {
+                amount: parseFloat(document.getElementById('paymentAmount').value),
+                paymentMethod: document.getElementById('paymentMethod').value,
+                transactionId: document.getElementById('transactionId').value
+            });
+            if (result.success) {
+                showAlert('success', '✅ Payment recorded!');
+                document.getElementById('paymentForm').reset();
+                toggleModal('recordPaymentModal');
+                loadPayments();
+                loadPendingBills();
+            } else {
+                showAlert('error', '❌ ' + result.message);
+            }
+        });
+
+        function logout() { Auth.logout(); }
+        
+        loadPayments();
+        loadPendingBills();
+    </script>
+</body>
+</html>
