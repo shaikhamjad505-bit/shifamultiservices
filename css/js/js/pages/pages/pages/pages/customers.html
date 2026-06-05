@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customers - Shifa Multi Services</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header"><h3>📊 Menu</h3></div>
+            <nav class="sidebar-nav">
+                <a href="dashboard.html" class="nav-item">📊 Dashboard</a>
+                <a href="customers.html" class="nav-item active">👥 Customers</a>
+                <a href="billing.html" class="nav-item">📄 Bills</a>
+                <a href="payments.html" class="nav-item">💳 Payments</a>
+            </nav>
+            <div class="sidebar-footer">
+                <button class="btn btn-danger btn-full" onclick="logout()">🚪 Logout</button>
+            </div>
+        </aside>
+
+        <main class="dashboard-content">
+            <header class="dashboard-header">
+                <h1>👥 Customers</h1>
+                <button class="btn btn-secondary" onclick="toggleModal('addCustomerModal')">➕ Add</button>
+            </header>
+
+            <div id="addCustomerModal" class="modal" style="display:none;">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>➕ Add Customer</h2>
+                    <form id="customerForm" class="auth-form">
+                        <div class="form-group">
+                            <label>Name *</label>
+                            <input type="text" id="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" id="email">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="tel" id="phone">
+                        </div>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <textarea id="address" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" id="city">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">✅ Add</button>
+                    </form>
+                </div>
+            </div>
+
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>City</th>
+                        <th>Joined</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="customersTable">
+                    <tr><td colspan="6" class="text-center">Loading...</td></tr>
+                </tbody>
+            </table>
+        </main>
+    </div>
+
+    <script src="../js/database.js"></script>
+    <script src="../js/app.js"></script>
+    <script>
+        checkAuth();
+        const owner = Auth.getCurrentOwner();
+
+        function loadCustomers() {
+            const customers = db.getCustomers(owner.id);
+            const tbody = document.getElementById('customersTable');
+            tbody.innerHTML = '';
+            if (!customers.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center">No customers</td></tr>';
+                return;
+            }
+            customers.forEach(c => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${c.name}</strong></td>
+                        <td>${c.email || '-'}</td>
+                        <td>${c.phone || '-'}</td>
+                        <td>${c.city || '-'}</td>
+                        <td>${formatDate(c.createdAt)}</td>
+                        <td>
+                            <button class="btn btn-small" onclick="deleteCustomer(${c.id})">Delete</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('customerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const result = db.addCustomer(owner.id, {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value
+            });
+            if (result.success) {
+                showAlert('success', '✅ Customer added!');
+                document.getElementById('customerForm').reset();
+                toggleModal('addCustomerModal');
+                loadCustomers();
+            }
+        });
+
+        function deleteCustomer(id) {
+            if (confirm('Delete this customer?')) {
+                db.deleteCustomer(id, owner.id);
+                showAlert('success', '✅ Deleted!');
+                loadCustomers();
+            }
+        }
+
+        function logout() { Auth.logout(); }
+        
+        loadCustomers();
+    </script>
+</body>
+</html>
