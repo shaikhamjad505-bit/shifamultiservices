@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Shifa Multi Services</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <h2>📝 Create Business Account</h2>
+            <p class="auth-subtitle">Register your multi-service business</p>
+            <form id="registerForm" class="auth-form">
+                <div class="form-group">
+                    <label for="businessName">🏢 Business Name</label>
+                    <input type="text" id="businessName" required placeholder="Your Business Name">
+                </div>
+                <div class="form-group">
+                    <label for="ownerName">👤 Owner Name</label>
+                    <input type="text" id="ownerName" required placeholder="Your Name">
+                </div>
+                <div class="form-group">
+                    <label for="email">📧 Email</label>
+                    <input type="email" id="email" required placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="phone">📞 Phone</label>
+                    <input type="tel" id="phone" required placeholder="+91 XXXXXXXXXX">
+                </div>
+                <div class="form-group">
+                    <label for="password">🔑 Password</label>
+                    <input type="password" id="password" required placeholder="••••••••" minlength="6">
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">✅ Create Account</button>
+            </form>
+            <p class="auth-switch">Already have an account? <a href="login.html">Login here</a></p>
+        </div>
+    </div>
+    <script src="../js/database.js"></script>
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const ownerData = {
+                businessName: document.getElementById('businessName').value,
+                ownerName: document.getElementById('ownerName').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                password: document.getElementById('password').value
+            };
+            const result = db.registerOwner(ownerData);
+            if (result.success) {
+                showAlert('success', '✅ Registration successful! Redirecting...');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 2000);
+            } else {
+                showAlert('error', '❌ ' + result.message);
+            }
+        });
+        function showAlert(type, message) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            alert.style.position = 'fixed';
+            alert.style.top = '20px';
+            alert.style.right = '20px';
+            alert.style.zIndex = '9999';
+            document.body.appendChild(alert);
+            setTimeout(() => alert.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
